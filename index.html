@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X26000 Wewa - Planning & Suivi Trésorerie Firebase</title>
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0284c7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="X26000 Wewa">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Firebase SDK pour x26000_wewa -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA2E5Ygxv_8hMm4C6HbTtpyprGUzi1xDPY",
+            authDomain: "x26000.firebaseapp.com",
+            databaseURL: "https://x26000-default-rtdb.firebaseio.com",
+            projectId: "x26000",
+            storageBucket: "x26000.firebasestorage.app",
+            messagingSenderId: "789227184987",
+            appId: "1:789227184987:web:7838050c989cd59644707e",
+            measurementId: "G-3VF94NZX8E"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getDatabase(app);
+
+        window.db = db;
+        window.FB_Refs = { ref, push, set, onValue, remove };
+        
+        if(window.initAppAfterFirebase) {
+            window.initAppAfterFirebase();
+        }
+    </script>
+
+    <style>
+        body { background-color: #f8fafc; color: #1e293b; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; }
+        .bg-accent-blue { background-color: #0284c7; }
+        .calendar-day-header { text-align: center; font-size: 0.75rem; font-weight: 700; color: #64748b; padding: 6px; }
+        .calendar-day-cell { min-height: 85px; border: 1px solid #e2e8f0; padding: 4px; border-radius: 6px; position: relative; background-color: #ffffff; }
+        .calendar-day-cell.today { border: 2px solid #0284c7; background-color: #f0f9ff; }
+        .calendar-day-number { font-size: 0.75rem; font-weight: 700; color: #334155; margin-bottom: 2px; }
+        .event-badge { font-size: 0.65rem; padding: 2px 4px; border-radius: 4px; margin-bottom: 2px; line-height: 1.1; font-weight: 600; display: block; text-overflow: ellipsis; overflow: hidden; whitespace: nowrap; cursor: pointer; }
+        .event-usine { background-color: #dbeafe; color: #1e40af; border-left: 3px solid #2563eb; }
+        .event-fret { background-color: #ffedd5; color: #9a3412; border-left: 3px solid #ea580c; }
+        .event-condi { background-color: #fef3c7; color: #92400e; border-left: 3px solid #d97706; }
+        .event-vente { background-color: #dcfce7; color: #166534; border-left: 3px solid #16a34a; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- HEADER -->
+    <div class="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="px-3 py-1 bg-amber-600 text-white font-black rounded-lg text-lg tracking-wider">X26000 WEWA</span>
+                <h1 class="text-2xl md:text-3xl font-bold text-slate-900">Cupidon Spray — Cycles 26 000 pcs / Mois (Sans Stock 10k)</h1>
+            </div>
+            <p class="text-slate-500 mt-1">Base de données Wewa active • Synchronisation Cloud Firebase</p>
+        </div>
+        <div class="flex gap-3">
+            <span class="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-semibold text-sm border border-blue-200">
+                🚀 Vague : 26 000 flacons / mois
+            </span>
+            <span class="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-lg font-semibold text-sm border border-emerald-200">
+                💰 CA Mensuel : 23 400 $
+            </span>
+        </div>
+    </div>
+
+    <!-- KPIS FINANCIERS -->
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="card p-5">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Acompte Initial Usine (30 Oct)</p>
+            <h2 class="text-2xl font-black text-rose-600 mt-1">748,80 $</h2>
+            <p class="text-xs text-slate-500 mt-1">30% sur lot de 26 000 pcs</p>
+        </div>
+        <div class="card p-5">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Volume Total (6 Mois)</p>
+            <h2 class="text-2xl font-black text-slate-800 mt-1">156 000 pcs</h2>
+            <p class="text-xs text-slate-500 mt-1">6 cycles de 26k pcs/mois</p>
+        </div>
+        <div class="card p-5">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Chiffre d'Affaires Cumulé</p>
+            <h2 class="text-2xl font-black text-blue-600 mt-1">140 400 $</h2>
+            <p class="text-xs text-slate-500 mt-1">6 × 23 400$ (Vagues 26k)</p>
+        </div>
+        <div class="card p-5">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Trésorerie Nette Finale (M6)</p>
+            <h2 class="text-2xl font-black text-emerald-600 mt-1" id="kpi-marge">0 $</h2>
+            <p class="text-xs text-slate-500 mt-1">Fonds accumulés après déductions réelles</p>
+        </div>
+    </div>
+
+    <!-- CALENDRIER -->
+    <div class="max-w-7xl mx-auto mb-8">
+        <div class="card p-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-800">📅 Planning & Alertes Échéances (26 000 pcs/mois)</h3>
+                    <p class="text-xs text-slate-500">Suivi des paiements usine, expéditions, retraits fret et encaissements</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="changeCalendarMonth(-1)" class="px-3 py-1.5 border rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50">◄ Mois Précédent</button>
+                    <span id="cal-month-title" class="text-sm font-bold text-slate-800 px-2">Octobre 2026</span>
+                    <button onclick="changeCalendarMonth(1)" class="px-3 py-1.5 border rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50">Mois Suivant ►</button>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-4 mb-4 text-xs font-semibold">
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-blue-600 inline-block"></span> Paiements Usine</span>
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-orange-500 inline-block"></span> Fret & Retrait Colis</span>
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-600 inline-block"></span> Encaissements Ventes</span>
+            </div>
+
+            <div class="grid grid-cols-7 gap-1 bg-slate-200 p-1 rounded-lg">
+                <div class="calendar-day-header bg-slate-50">Lun</div>
+                <div class="calendar-day-header bg-slate-50">Mar</div>
+                <div class="calendar-day-header bg-slate-50">Mer</div>
+                <div class="calendar-day-header bg-slate-50">Jeu</div>
+                <div class="calendar-day-header bg-slate-50">Ven</div>
+                <div class="calendar-day-header bg-slate-50">Sam</div>
+                <div class="calendar-day-header bg-slate-50">Dim</div>
+                
+                <div id="calendar-grid" class="contents"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SAISIE TRANSACTIONS RÉELLES -->
+    <div class="max-w-7xl mx-auto mb-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="card p-6 border-l-4 border-l-amber-600">
+            <h3 class="text-lg font-bold text-slate-800 mb-2">➕ Enregistrer une Transaction Wewa</h3>
+            <p class="text-xs text-slate-500 mb-4">Saisis chaque règlement (Synchronisé Firebase Wewa)</p>
+            
+            <form id="form-real-payment" onsubmit="addRealPayment(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Date d'Exécution</label>
+                    <input type="date" id="real-date" value="2026-10-30" required class="w-full p-2 border rounded-lg text-sm bg-slate-50">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Catégorie / Cible</label>
+                    <select id="real-category" required class="w-full p-2 border rounded-lg text-sm bg-slate-50">
+                        <option value="Usine Chine">Usine Chine</option>
+                        <option value="Stone Cargo / Kin Express">Fret Aérien (Kin Express / Stone Cargo)</option>
+                        <option value="Agents & Commission">Agents & Réseau Vente</option>
+                        <option value="Packaging & Intrants">Conditionnement & Intrants</option>
+                        <option value="Encaissement Ventes">Encaissement Ventes (Entrée)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Description / Motif</label>
+                    <input type="text" id="real-label" placeholder="ex: Acompte usine 30%" required class="w-full p-2 border rounded-lg text-sm bg-slate-50">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Type</label>
+                        <select id="real-type" class="w-full p-2 border rounded-lg text-sm bg-slate-50">
+                            <option value="OUT">Sortie (-)</option>
+                            <option value="IN">Entrée (+)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Montant ($)</label>
+                        <input type="number" step="0.01" id="real-amount" placeholder="748.80" required class="w-full p-2 border rounded-lg text-sm bg-slate-50">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">🖼️ Capture / Preuve de transaction</label>
+                    <input type="file" id="real-proof" accept="image/*" class="w-full p-1.5 border rounded-lg text-xs bg-slate-50 text-slate-600">
+                </div>
+                <button type="submit" id="btn-submit" class="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg transition text-sm">
+                    Enregistrer la transaction
+                </button>
+            </form>
+        </div>
+
+        <div class="card p-6 lg:col-span-2">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800">📊 Historique des Paiements Wewa</h3>
+                    <p class="text-xs text-slate-500">Journal Cloud en temps réel</p>
+                </div>
+                <span class="px-3 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-800">Firebase Wewa Actif</span>
+            </div>
+            <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700 text-xs uppercase sticky top-0">
+                            <th class="p-2">Date</th>
+                            <th class="p-2">Motif</th>
+                            <th class="p-2">Catégorie</th>
+                            <th class="p-2 text-right">Montant ($)</th>
+                            <th class="p-2 text-center">Preuve</th>
+                            <th class="p-2 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="real-tbody" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLEAU ECHEANCIER -->
+    <div class="max-w-7xl mx-auto mb-8">
+        <div class="card p-6">
+            <h3 class="text-xl font-bold text-slate-800 mb-4">🛠️ Échéancier Théorique des Flux Financiers & Logistiques (Wewa)</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="bg-slate-100 font-bold text-slate-700">
+                            <th class="p-3">Date Prévue</th>
+                            <th class="p-3">Mois</th>
+                            <th class="p-3">Étape / Intitulé</th>
+                            <th class="p-3">Entité / Source</th>
+                            <th class="p-3 text-right">Sortie ($)</th>
+                            <th class="p-3 text-right">Entrée ($)</th>
+                            <th class="p-3 text-right">Solde Cumulé ($)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payments-tbody" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- GRAPH & PARAMETRES -->
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <div class="card p-6 lg:col-span-2">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">📈 Courbe d'Évolution de la Trésorerie (Wewa)</h3>
+            <div class="h-72">
+                <canvas id="financeChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">⚙ Paramètres X26000 Wewa</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Prix Usine Chine ($/flacon)</label>
+                    <input type="text" id="param-usine" value="0.096" class="w-full p-2 border rounded-lg text-sm bg-slate-50">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tarif Fret Aérien ($/kg)</label>
+                    <input type="text" id="param-fret" value="19" class="w-full p-2 border rounded-lg text-sm bg-slate-50">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Prix de Vente Gros ($/flacon)</label>
+                    <input type="text" id="param-vente" value="0.90" class="w-full p-2 border rounded-lg text-sm bg-slate-50">
+                </div>
+                <button onclick="generateAllData()" class="w-full py-2.5 bg-amber-600 text-white font-bold rounded-lg hover:bg-amber-700 transition text-sm">
+                    Recalculer le modèle Wewa
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE -->
+    <div id="proof-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative border border-slate-100">
+            <button onclick="closeProofModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
+            <h3 class="text-lg font-bold text-slate-800 mb-1" id="modal-label">Détails de la transaction</h3>
+            <p class="text-xs text-slate-500 mb-4" id="modal-meta"></p>
+            <div class="border rounded-xl p-2 bg-slate-50 mb-4 flex items-center justify-center min-h-[220px]">
+                <img id="modal-img" src="" alt="Preuve" class="max-h-80 object-contain rounded-lg hidden">
+                <p id="modal-no-img" class="text-xs text-slate-400 italic">Aucune capture d'écran jointe.</p>
+            </div>
+            <button onclick="closeProofModal()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs transition">Fermer</button>
+        </div>
+    </div>
+
+    <!-- LOGIQUE JAVASCRIPT ET FIREBASE WEWA -->
+    <script>
+        var myChart = null;
+        var allPayments = [];
+        var calendarEvents = [];
+        var realPayments = [];
+        
+        var currentCalYear = 2026;
+        var currentCalMonth = 9;
+        var monthNames = ["Novembre 2026", "Décembre 2026", "Janvier 2027", "Février 2027", "Mars 2027", "Avril 2027"];
+
+        function cleanNum(val) {
+            if (typeof val === 'number') return val;
+            if (!val) return 0;
+            return parseFloat(val.toString().replace(',', '.')) || 0;
+        }
+
+        function formatDateStr(y, m, d) {
+            var mm = String(m + 1).padStart(2, '0');
+            var dd = String(d).padStart(2, '0');
+            return y + '-' + mm + '-' + dd;
+        }
+
+        function generateAllData() {
+            var pxUsine = cleanNum(document.getElementById('param-usine').value) || 0.096;
+            var pxFret = cleanNum(document.getElementById('param-fret').value) || 19;
+            var pxVente = cleanNum(document.getElementById('param-vente').value) || 0.90;
+
+            var volMensuel = 26000;
+            var coutUsineLot = volMensuel * pxUsine; // 2 496 $
+            var coutFret26k = (86 * 2.6) * pxFret;   // ~223.6 kg = 4 248,40 $
+            var caMensuel = volMensuel * pxVente;    // 23 400 $
+
+            allPayments = [];
+            calendarEvents = [];
+            var currentSolde = 0;
+
+            // 30 Octobre : Uniquement l'Acompte 30% lot 26k (Pas de stock 10k)
+            var acompteAmt = coutUsineLot * 0.3; // 748,80 $
+            currentSolde -= acompteAmt;
+            allPayments.push({
+                date: "2026-10-30", displayDate: "30 Oct 2026", monthCode: "M1",
+                label: "Acompte 30% Usine (26 000 pcs Nov)", entity: "Usine Chine",
+                type: "OUT", amount: acompteAmt, solde: currentSolde
+            });
+            calendarEvents.push({ date: "2026-10-30", label: "💰 Acompte 30% Usine (26k)", type: "usine" });
+
+            var years = [2026, 2026, 2027, 2027, 2027, 2027];
+            var monthIndexes = [10, 11, 0, 1, 2, 3]; 
+
+            for (var m = 0; m < 6; m++) {
+                var mCode = "M" + (m+1);
+                var mLabel = monthNames[m];
+                var year = years[m];
+                var monthIdx = monthIndexes[m];
+
+                var soldeAmt = coutUsineLot * 0.7; // 1 747,20 $
+
+                if (m > 0) {
+                    var prevMonthIdx = monthIdx === 0 ? 11 : monthIdx - 1;
+                    var prevYear = monthIdx === 0 ? year - 1 : year;
+                    var prevDateStr = formatDateStr(prevYear, prevMonthIdx, 30);
+
+                    currentSolde -= acompteAmt;
+                    allPayments.push({
+                        date: prevDateStr, displayDate: "30 " + monthNames[m-1].split(' ')[0],
+                        monthCode: mCode, label: "Acompte 30% Usine (26k pcs " + mLabel + ")", entity: "Usine Chine",
+                        type: "OUT", amount: acompteAmt, solde: currentSolde
+                    });
+                }
+
+                var date20Str = formatDateStr(year, monthIdx, 20);
+                
+                // Solde 70% Usine
+                currentSolde -= soldeAmt;
+                allPayments.push({
+                    date: date20Str, displayDate: "20 " + mLabel.split(' ')[0],
+                    monthCode: mCode, label: "Solde 70% Usine (26k pcs)", entity: "Usine Chine",
+                    type: "OUT", amount: soldeAmt, solde: currentSolde
+                });
+
+                // Fret Aérien 26k pcs
+                currentSolde -= coutFret26k;
+                allPayments.push({
+                    date: date20Str, displayDate: "20 " + mLabel.split(' ')[0],
+                    monthCode: mCode, label: "Fret Aérien 26k pcs (~223.6kg)", entity: "Stone Cargo / Transitaire",
+                    type: "OUT", amount: coutFret26k, solde: currentSolde
+                });
+
+                var nextMonthIdx = monthIdx === 11 ? 0 : monthIdx + 1;
+                var nextYear = monthIdx === 11 ? year + 1 : year;
+                var date10NextStr = formatDateStr(nextYear, nextMonthIdx, 10);
+
+                currentSolde += caMensuel;
+                allPayments.push({
+                    date: date10NextStr, displayDate: "10 " + (m<5 ? monthNames[m+1].split(' ')[0] : 'Mai'),
+                    monthCode: mCode, label: "Encaissement Ventes Vague 26k flacons", entity: "Réseau Ventes Kin/Brazza",
+                    type: "IN", amount: caMensuel, solde: currentSolde
+                });
+            }
+
+            var kpiMargeEl = document.getElementById('kpi-marge');
+            if(kpiMargeEl) {
+                kpiMargeEl.innerText = Math.round(currentSolde).toLocaleString('fr-FR') + ' $';
+            }
+
+            renderCalendar();
+            renderPaymentsTable();
+            renderChart();
+        }
+
+        function renderPaymentsTable() {
+            var tbody = document.getElementById('payments-tbody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            allPayments.forEach(function(p) {
+                var tr = document.createElement('tr');
+                tr.className = p.type === 'IN' ? 'bg-emerald-50/40' : 'hover:bg-slate-50';
+                tr.innerHTML = 
+                    '<td class="p-3 font-semibold text-slate-700">' + p.displayDate + '</td>' +
+                    '<td class="p-3 text-xs text-slate-500 font-medium">' + p.monthCode + '</td>' +
+                    '<td class="p-3 font-medium text-slate-800">' + p.label + '</td>' +
+                    '<td class="p-3 text-slate-600">' + p.entity + '</td>' +
+                    '<td class="p-3 text-right font-semibold text-rose-600">' + (p.type === 'OUT' ? '- ' + Math.round(p.amount).toLocaleString('fr-FR') + ' $' : '-') + '</td>' +
+                    '<td class="p-3 text-right font-semibold text-emerald-600">' + (p.type === 'IN' ? '+ ' + Math.round(p.amount).toLocaleString('fr-FR') + ' $' : '-') + '</td>' +
+                    '<td class="p-3 text-right font-bold text-slate-800">' + Math.round(p.solde).toLocaleString('fr-FR') + ' $</td>';
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderCalendar() {
+            var grid = document.getElementById('calendar-grid');
+            if(!grid) return;
+            grid.innerHTML = '';
+            var calDate = new Date(currentCalYear, currentCalMonth, 1);
+            var calMonthTitle = document.getElementById('cal-month-title');
+            if(calMonthTitle) calMonthTitle.innerText = calDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+            var firstDay = calDate.getDay();
+            var daysInMonth = new Date(currentCalYear, currentCalMonth + 1, 0).getDate();
+            var paddingDays = firstDay === 0 ? 6 : firstDay - 1;
+
+            for (var i = 0; i < paddingDays; i++) {
+                var emptyCell = document.createElement('div');
+                emptyCell.className = "calendar-day-cell bg-slate-50 opacity-40";
+                grid.appendChild(emptyCell);
+            }
+
+            var today = new Date();
+            var todayStr = formatDateStr(today.getFullYear(), today.getMonth(), today.getDate());
+
+            for (var day = 1; day <= daysInMonth; day++) {
+                var dateStr = formatDateStr(currentCalYear, currentCalMonth, day);
+                var cell = document.createElement('div');
+                cell.className = "calendar-day-cell " + (dateStr === todayStr ? 'today' : '');
+                var dayHTML = '<div class="calendar-day-number">' + day + '</div>';
+                var dayEvents = calendarEvents.filter(function(e) { return e.date === dateStr; });
+                dayEvents.forEach(function(e) {
+                    dayHTML += '<div class="event-badge event-' + e.type + '" title="' + e.label + '">' + e.label + '</div>';
+                });
+                cell.innerHTML = dayHTML;
+                grid.appendChild(cell);
+            }
+        }
+
+        function changeCalendarMonth(delta) {
+            currentCalMonth += delta;
+            if (currentCalMonth > 11) { currentCalMonth = 0; currentCalYear++; }
+            if (currentCalMonth < 0) { currentCalMonth = 11; currentCalYear--; }
+            renderCalendar();
+        }
+
+        // --- FIREBASE SYNC WEWA ---
+        window.initAppAfterFirebase = function() {
+            var dbRef = window.FB_Refs.ref(window.db, 'transactions_wewa');
+            window.FB_Refs.onValue(dbRef, function(snapshot) {
+                realPayments = [];
+                const data = snapshot.val();
+                if (data) {
+                    Object.keys(data).forEach(function(key) {
+                        realPayments.push({ id: key, ...data[key] });
+                    });
+                }
+                renderRealPayments();
+            });
+        };
+
+        function addRealPayment(e) {
+            e.preventDefault();
+            var dateVal = document.getElementById('real-date').value;
+            var catVal = document.getElementById('real-category').value;
+            var labelVal = document.getElementById('real-label').value;
+            var typeVal = document.getElementById('real-type').value;
+            var amtVal = parseFloat(document.getElementById('real-amount').value);
+            var fileInput = document.getElementById('real-proof');
+            var submitBtn = document.getElementById('btn-submit');
+
+            submitBtn.innerText = "Enregistrement...";
+            submitBtn.disabled = true;
+
+            function saveToFirebase(imageBase64) {
+                var newTransRef = window.FB_Refs.push(window.FB_Refs.ref(window.db, 'transactions_wewa'));
+                window.FB_Refs.set(newTransRef, {
+                    date: dateVal,
+                    category: catVal,
+                    label: labelVal,
+                    type: typeVal,
+                    amount: amtVal,
+                    proof: imageBase64 || null
+                }).then(function() {
+                    document.getElementById('form-real-payment').reset();
+                    submitBtn.innerText = "Enregistrer la transaction";
+                    submitBtn.disabled = false;
+                }).catch(function(err) {
+                    alert("Erreur d'enregistrement : " + err.message);
+                    submitBtn.innerText = "Enregistrer la transaction";
+                    submitBtn.disabled = false;
+                });
+            }
+
+            if (fileInput.files && fileInput.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(evt) {
+                    saveToFirebase(evt.target.result);
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                saveToFirebase(null);
+            }
+        }
+
+        function deleteRealPayment(id) {
+            if(confirm("Confirmer la suppression de cette transaction ?")) {
+                window.FB_Refs.remove(window.FB_Refs.ref(window.db, 'transactions_wewa/' + id));
+            }
+        }
+
+        function openProofModal(id) {
+            var item = realPayments.find(function(p) { return p.id === id; });
+            if (!item) return;
+            document.getElementById('modal-label').innerText = item.label;
+            document.getElementById('modal-meta').innerText = 'Exécuté le ' + item.date;
+            var imgEl = document.getElementById('modal-img');
+            var noImgEl = document.getElementById('modal-no-img');
+            if (item.proof) {
+                imgEl.src = item.proof; imgEl.classList.remove('hidden'); noImgEl.classList.add('hidden');
+            } else {
+                imgEl.src = ''; imgEl.classList.add('hidden'); noImgEl.classList.remove('hidden');
+            }
+            document.getElementById('proof-modal').classList.remove('hidden');
+        }
+
+        function closeProofModal() {
+            document.getElementById('proof-modal').classList.add('hidden');
+        }
+
+        function renderRealPayments() {
+            var tbody = document.getElementById('real-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            realPayments.sort(function(a,b) { return new Date(b.date) - new Date(a.date); });
+            realPayments.forEach(function(p) {
+                var tr = document.createElement('tr');
+                tr.className = p.type === 'IN' ? 'bg-emerald-50/40' : 'hover:bg-slate-50';
+                var proofHTML = p.proof 
+                    ? '<img src="' + p.proof + '" onclick="openProofModal(\'' + p.id + '\')" class="w-8 h-8 object-cover rounded border cursor-pointer hover:scale-105 transition mx-auto">'
+                    : '<span class="text-[10px] text-slate-300 italic">Aucune</span>';
+                tr.innerHTML = 
+                    '<td class="p-2 text-xs font-semibold text-slate-600">' + p.date + '</td>' +
+                    '<td class="p-2 text-xs font-medium text-slate-800">' + p.label + '</td>' +
+                    '<td class="p-2 text-xs text-slate-500">' + p.category + '</td>' +
+                    '<td class="p-2 text-xs text-right font-bold ' + (p.type === 'OUT' ? 'text-rose-600' : 'text-emerald-600') + '">' +
+                        (p.type === 'OUT' ? '-' : '+') + p.amount.toLocaleString('fr-FR') + ' $' +
+                    '</td>' +
+                    '<td class="p-2 text-xs text-center">' + proofHTML + '</td>' +
+                    '<td class="p-2 text-xs text-center flex items-center justify-center gap-2">' +
+                        '<button onclick="openProofModal(\'' + p.id + '\')" class="text-blue-600 hover:text-blue-800 font-bold">👁️</button>' +
+                        '<button onclick="deleteRealPayment(\'' + p.id + '\')" class="text-rose-500 hover:text-rose-700 font-bold">✕</button>' +
+                    '</td>';
+                tbody.appendChild(tr);
+            });
+            if (realPayments.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-xs text-slate-400">Aucune transaction enregistrée.</td></tr>';
+            }
+        }
+
+        function renderChart() {
+            var ctx = document.getElementById('financeChart');
+            if(!ctx || typeof Chart === 'undefined') return;
+            var monthlySoldes = [];
+            for (var m = 1; m <= 6; m++) {
+                var lastPayment = allPayments.filter(function(p) { return p.monthCode === 'M' + m; }).slice(-1)[0];
+                monthlySoldes.push(lastPayment ? Math.round(lastPayment.solde) : 0);
+            }
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: monthNames,
+                    datasets: [{
+                        label: 'Trésorerie Accumulée Wewa ($)',
+                        data: monthlySoldes,
+                        borderColor: '#d97706',
+                        backgroundColor: 'rgba(217, 119, 6, 0.1)',
+                        borderWidth: 3, fill: true, tension: 0.3, pointRadius: 6, pointBackgroundColor: '#d97706'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#f1f5f9' }, ticks: { callback: function(v) { return v.toLocaleString('fr-FR') + ' $'; } } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        window.onload = function() {
+            generateAllData();
+        };
+    </script>
+</body>
+</html>
