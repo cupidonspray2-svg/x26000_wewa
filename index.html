@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>X26000 Wewa - Planning & Suivi Trésorerie Firebase</title>
+    <title>X26000 Wewa - Planning, Alerte Calendrier & Suivi Trésorerie</title>
     
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0284c7">
@@ -54,7 +54,6 @@
         .event-badge { font-size: 0.65rem; padding: 2px 4px; border-radius: 4px; margin-bottom: 2px; line-height: 1.1; font-weight: 600; display: block; text-overflow: ellipsis; overflow: hidden; whitespace: nowrap; cursor: pointer; }
         .event-usine { background-color: #dbeafe; color: #1e40af; border-left: 3px solid #2563eb; }
         .event-fret { background-color: #ffedd5; color: #9a3412; border-left: 3px solid #ea580c; }
-        .event-condi { background-color: #fef3c7; color: #92400e; border-left: 3px solid #d97706; }
         .event-vente { background-color: #dcfce7; color: #166534; border-left: 3px solid #16a34a; }
     </style>
 </head>
@@ -288,7 +287,7 @@
         var realPayments = [];
         
         var currentCalYear = 2026;
-        var currentCalMonth = 9;
+        var currentCalMonth = 9; // Octobre
         var monthNames = ["Novembre 2026", "Décembre 2026", "Janvier 2027", "Février 2027", "Mars 2027", "Avril 2027"];
 
         function cleanNum(val) {
@@ -317,7 +316,7 @@
             calendarEvents = [];
             var currentSolde = 0;
 
-            // 30 Octobre : Uniquement l'Acompte 30% lot 26k (Pas de stock 10k)
+            // 30 Octobre : Acompte 30% lot 26k
             var acompteAmt = coutUsineLot * 0.3; // 748,80 $
             currentSolde -= acompteAmt;
             allPayments.push({
@@ -349,6 +348,7 @@
                         monthCode: mCode, label: "Acompte 30% Usine (26k pcs " + mLabel + ")", entity: "Usine Chine",
                         type: "OUT", amount: acompteAmt, solde: currentSolde
                     });
+                    calendarEvents.push({ date: prevDateStr, label: "💰 Acompte 30% Usine (" + mCode + ")", type: "usine" });
                 }
 
                 var date20Str = formatDateStr(year, monthIdx, 20);
@@ -360,6 +360,7 @@
                     monthCode: mCode, label: "Solde 70% Usine (26k pcs)", entity: "Usine Chine",
                     type: "OUT", amount: soldeAmt, solde: currentSolde
                 });
+                calendarEvents.push({ date: date20Str, label: "🏭 Solde 70% Usine (" + mCode + ")", type: "usine" });
 
                 // Fret Aérien 26k pcs
                 currentSolde -= coutFret26k;
@@ -368,6 +369,7 @@
                     monthCode: mCode, label: "Fret Aérien 26k pcs (~223.6kg)", entity: "Stone Cargo / Transitaire",
                     type: "OUT", amount: coutFret26k, solde: currentSolde
                 });
+                calendarEvents.push({ date: date20Str, label: "✈️ Fret 26k pcs (" + mCode + ")", type: "fret" });
 
                 var nextMonthIdx = monthIdx === 11 ? 0 : monthIdx + 1;
                 var nextYear = monthIdx === 11 ? year + 1 : year;
@@ -379,6 +381,7 @@
                     monthCode: mCode, label: "Encaissement Ventes Vague 26k flacons", entity: "Réseau Ventes Kin/Brazza",
                     type: "IN", amount: caMensuel, solde: currentSolde
                 });
+                calendarEvents.push({ date: date10NextStr, label: "💵 Encaissement Ventes (" + mCode + ")", type: "vente" });
             }
 
             var kpiMargeEl = document.getElementById('kpi-marge');
